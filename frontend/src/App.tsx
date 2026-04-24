@@ -16,68 +16,65 @@ import {
   ShieldCheck,
   TrendingUp,
   TriangleAlert,
-  Zap
+  Zap,
+  Target,
+  AlertOctagon,
+  BrainCircuit,
+  Scale,
+  Waves
 } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000/api';
-
-interface Recommendation {
-  action: string;
-  current?: string;
-  target?: string;
-  shift?: string;
-  reason: string;
-}
+const API_BASE = 'https://financial-advisor-backend-lomesh.onrender.com/api';
 
 interface DashboardData {
+  portfolio_id: string;
+  portfolio_analysis: {
+    total_pnl: number;
+    pnl_percent: number;
+    top_sector: string;
+    effective_sector_exposure: Record<string, number>;
+    risk_diagnostics: {
+      hhi: number;
+      hhi_status: string;
+      overlap_risk: string;
+      beta_sensitivity: number;
+      rate_sensitivity: string;
+      sector_concentration_risk: string;
+    };
+    stress_tests: Array<{ scenario: string; impact_percent: number; vulnerable_holdings: string[]; drawdown_estimate: string }>;
+    major_holdings: Array<{ name: string; weight: number }>;
+  };
   advisor_report: {
-    summary: string;
-    key_drivers: string[];
-    risks: string[];
-    recommendations: Recommendation[];
-    confidence: string;
+    executive_summary: string;
+    causal_driver_chains: Array<{ event: string; macro_variable: string; sector_impact: string; affected_holdings: string; estimated_portfolio_impact: number; confidence: number; strength: string }>;
+    strategic_rebalancing_actions: Array<{ action: string; current_allocation: number; target_allocation: number; shift: number; reasoning: string; expected_benefit: string; tradeoff: string }>;
+    sector_intelligence_view: Array<{ sector: string; trend_signal: string; change_percent: number; macro_rationale: string; impact_on_portfolio: string }>;
+    final_diagnosis: string;
+    confidence_level: string;
   };
   evaluation: {
     score: number;
     rating: string;
     feedback: string;
   };
-  portfolio_analysis: {
-    total_pnl: number;
-    pnl_percent: number;
-    top_sector: string;
-    asset_allocation: Record<string, number>;
-    risk_analysis: {
-      overall_risk: string;
-      risk_flags: string[];
-    };
-    major_holdings: Array<{ name: string; weight: number }>;
-  };
-  market_context: {
-    market_sentiment: string;
-    sector_trends: Record<string, { change: number; trend: string }>;
-    news_summary: Record<string, any[]>;
-  };
 }
 
 const formatCurrency = (val: number) => 
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
-const MetricCard = ({ title, value, subtitle, trend }: any) => (
-  <div className="card">
-    <div className="card-title">{title}</div>
-    <div className="metric-large">{value}</div>
-    <div className="text-sm">
-      <span className="text-bold">{trend}</span> {subtitle}
-    </div>
+const MetricCard = ({ title, value, subtitle, color = "#000" }: any) => (
+  <div className="card" style={{ borderLeft: `4px solid ${color}` }}>
+    <div className="card-title" style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666' }}>{title}</div>
+    <div className="metric-large" style={{ color: color }}>{value}</div>
+    <div className="text-sm" style={{ color: '#888' }}>{subtitle}</div>
   </div>
 );
 
-const Section = ({ title, children, fullWidth = false }: any) => (
-  <div className={`card ${fullWidth ? 'card-full' : ''}`}>
-    <div className="card-title">{title}</div>
-    {children}
+const SectionHeader = ({ title, icon: Icon }: any) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+    {Icon && <Icon size={20} color="#000" />}
+    <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>{title}</h2>
   </div>
 );
 
@@ -93,203 +90,210 @@ function App() {
     setError(null);
     try {
       const response = await axios.get(`${API_BASE}/advisor-evaluation/${id}`);
-      if (response.data.error) {
-        throw new Error(response.data.detail || response.data.error);
-      }
+      if (response.data.error) throw new Error(response.data.detail);
       setData(response.data);
     } catch (err: any) {
-      setError(err.message || "Failed to connect to backend");
+      setError(err.message || "Institutional Node Offline");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchDashboard(portfolioId);
-  }, []);
+  useEffect(() => { fetchDashboard(portfolioId); }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const id = inputValue.trim().toUpperCase();
-    if (id) {
-      setPortfolioId(id);
-      fetchDashboard(id);
-    }
+    if (id) { setPortfolioId(id); fetchDashboard(id); }
   };
 
   return (
     <div className="app-container">
-      <aside className="sidebar">
+      <nav className="sidebar" style={{ background: '#0a0a0a' }}>
         <div className="sidebar-header">
-          <div className="sidebar-title">Autonomous Financial Advisor</div>
+          <div className="sidebar-title" style={{ color: '#fff', letterSpacing: '2px' }}>ANTIGRAVITY.CIO</div>
         </div>
-        <nav className="sidebar-nav">
-          <a href="#" className="nav-item active"><Globe size={16} /> Dashboard</a>
-          <a href="#" className="nav-item"><BarChart2 size={16} /> Market Analysis</a>
-          <a href="#" className="nav-item"><Compass size={16} /> Strategy</a>
-          <a href="#" className="nav-item"><Shield size={16} /> Compliance</a>
-        </nav>
-        <div style={{ marginTop: 'auto' }} className="text-sm">
-          <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', marginBottom: '8px' }}>Observability</div>
-          <a href="#" className="nav-item"><Activity size={16} /> Langfuse Status</a>
+        <div style={{ padding: '20px', color: '#555', fontSize: '11px' }}>INSTITUTIONAL TERMINAL</div>
+        <div className="sidebar-nav">
+          <button className={`nav-item active`} style={{ color: '#fff' }}><Activity size={16} /> Risk Engine</button>
+          <button className="nav-item"><Waves size={16} /> Stress Test</button>
+          <button className="nav-item"><Scale size={16} /> Rebalancer</button>
         </div>
-      </aside>
+      </nav>
 
       <main className="main-content">
-        <header className="header-section">
+        <header className="header-section" style={{ borderBottom: '2px solid #000', marginBottom: '30px' }}>
           <div>
-            <h1 className="header-title">Portfolio Intelligence</h1>
-            <div className="header-meta">Production System v0.1.1</div>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Institutional Risk Intelligence</h1>
+            <div style={{ color: '#666', fontSize: '13px' }}>Wealth Management Diagnostic • Real-time</div>
           </div>
-          <div className="header-meta">ID: {portfolioId}</div>
+          <form className="search-bar" onSubmit={handleSearch} style={{ margin: 0 }}>
+            <input className="input-field" placeholder="PORTFOLIO_ID" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+            <button type="submit" className="btn-primary" disabled={loading}>Analyze</button>
+          </form>
         </header>
-
-        <form className="search-bar" onSubmit={handleSearch}>
-          <input 
-            type="text" 
-            className="input-field" 
-            placeholder="Search Portfolio ID (e.g. PORTFOLIO_001)..." 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
-          <button type="submit" className="btn-primary" disabled={loading}>Analyze</button>
-        </form>
 
         {loading ? (
           <div className="loading-container">
-            <div className="spinner"></div>
-            <div className="text-bold">ELIMINATING HALLUCINATIONS...</div>
-            <div className="text-sm">Enforcing strict data grounding</div>
+            <Loader2 className="spinner" size={48} color="#000" />
+            <div style={{ marginTop: '20px', fontWeight: 600, letterSpacing: '1px' }}>DECOMPOSING MULTI-ASSET HOLDINGS...</div>
           </div>
         ) : error ? (
-          <div className="card" style={{ border: '1px solid #000' }}>
-            <div className="text-bold">SYSTEM ERROR</div>
-            <div className="text-sm">{error}</div>
-            <button className="btn-primary" style={{ marginTop: '16px', width: 'fit-content' }} onClick={() => fetchDashboard(portfolioId)}>Retry Connection</button>
+          <div className="card" style={{ borderColor: '#ff4d4f', background: '#fff1f0' }}>
+            <div style={{ color: '#cf1322', fontWeight: 700 }}>DIAGNOSTIC FAILURE</div>
+            <p>{error}</p>
+            <button className="btn-primary" onClick={() => fetchDashboard(portfolioId)}>Retry Connection</button>
           </div>
         ) : data ? (
-          <>
-            <div className="section-container">
-              <MetricCard 
-                title="Total P&L" 
-                value={formatCurrency(data.portfolio_analysis.total_pnl)} 
-                subtitle="Absolute Return"
-                trend={`${data.portfolio_analysis.pnl_percent}%`}
-              />
-              <MetricCard 
-                title="Top Exposure" 
-                value={data.portfolio_analysis.top_sector.replace(/_/g, ' ')} 
-                subtitle="Concentration"
-                trend="Sector Lead"
-              />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            
+            {/* Top Metrics */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+              <MetricCard title="Net P&L" value={formatCurrency(data.portfolio_analysis.total_pnl)} subtitle={`${data.portfolio_analysis.pnl_percent}% Performance`} color="#000" />
+              <MetricCard title="HHI Index" value={data.portfolio_analysis.risk_diagnostics.hhi} subtitle={data.portfolio_analysis.risk_diagnostics.hhi_status} color={data.portfolio_analysis.risk_diagnostics.hhi > 2500 ? "#cf1322" : "#000"} />
+              <MetricCard title="Beta Sensitivity" value={data.portfolio_analysis.risk_diagnostics.beta_sensitivity} subtitle="Systemic Exposure" color="#000" />
+              <MetricCard title="Risk Tier" value={data.evaluation.rating} subtitle={`Audit Score: ${data.evaluation.score}/10`} color={data.evaluation.rating === 'HIGH' ? '#27ae60' : '#faad14'} />
+            </div>
 
-              <Section title="Market Intelligence">
-                <div className="metric-medium">{data.market_context.market_sentiment}</div>
-                <div className="text-sm">Data-driven sentiment from indices and news signals.</div>
-                <div style={{ marginTop: '16px' }}>
-                  <div className="text-bold" style={{ fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Sector Trends</div>
-                  <table className="data-table">
-                    <tbody>
-                      {Object.entries(data.market_context.sector_trends).slice(0, 3).map(([sector, trend]: any) => (
-                        <tr key={sector}>
-                          <td>{sector}</td>
-                          <td style={{ textAlign: 'right' }}>{trend.change}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Section>
+            {/* Executive Summary */}
+            <div className="card" style={{ background: '#fcfcfc', border: '1px solid #ddd' }}>
+              <SectionHeader title="Executive CIO Summary" icon={FileText} />
+              <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#222', fontWeight: 400 }}>{data.advisor_report.executive_summary}</p>
+            </div>
 
-              <Section title="Asset Allocation">
-                 <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Sector</th>
-                        <th style={{ textAlign: 'right' }}>Weight (%)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(data.portfolio_analysis.asset_allocation).map(([sector, weight]) => (
-                        <tr key={sector}>
-                          <td>{sector.replace(/_/g, ' ')}</td>
-                          <td style={{ textAlign: 'right' }} className="text-bold">{weight}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-              </Section>
-
-              <div className="card card-full" style={{ background: '#fcfcfc' }}>
-                <div className="card-title">Precise Reasoning Engine (Llama 3.1 8B)</div>
-                <div className="metric-medium" style={{ marginBottom: '8px' }}>Analysis Summary</div>
-                <p style={{ marginBottom: '24px', maxWidth: '800px' }}>{data.advisor_report.summary}</p>
-
-                <div className="section-container" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 0, gap: '48px' }}>
-                  <div>
-                    <div className="text-bold" style={{ fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px' }}>Causal Drivers</div>
-                    <ul className="bullet-list">
-                      {data.advisor_report.key_drivers.map((d, i) => (
-                        <li key={i} className="bullet-item"><div className="bullet-icon"></div>{d}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <div className="text-bold" style={{ fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px' }}>Material Risks</div>
-                    <ul className="bullet-list">
-                      {data.advisor_report.risks.map((r, i) => (
-                        <li key={i} className="bullet-item"><div className="bullet-icon"></div>{r}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <div className="text-bold" style={{ fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px' }}>Strategic Actions</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {data.advisor_report.recommendations.map((rec, i) => (
-                        <div key={i} style={{ borderLeft: '2px solid #000', paddingLeft: '12px' }}>
-                          <div className="text-bold" style={{ fontSize: '13px' }}>{rec.action}</div>
-                          <div className="text-sm" style={{ margin: '4px 0', fontSize: '11px' }}>
-                            {rec.current} → {rec.target} ({rec.shift})
-                          </div>
-                          <div className="text-sm" style={{ color: '#000' }}>{rec.reason}</div>
-                        </div>
-                      ))}
+            {/* Effective Exposure & Risk */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '20px' }}>
+              <div className="card">
+                <SectionHeader title="Effective Sector Exposure (Look-through)" icon={BarChart2} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {Object.entries(data.portfolio_analysis.effective_sector_exposure).map(([s, w]) => (
+                    <div key={s}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px' }}>
+                        <span style={{ fontWeight: 600 }}>{s}</span>
+                        <span>{w}%</span>
+                      </div>
+                      <div style={{ height: '8px', background: '#f0f0f0', borderRadius: '4px' }}>
+                        <div style={{ height: '100%', background: '#000', width: `${w}%`, borderRadius: '4px' }}></div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-                   <div className="text-sm">Output Style: <span className="text-bold">Concise & Fact-Strict</span></div>
-                   <div className="text-sm">Confidence: <span className="tag">{data.advisor_report.confidence}</span></div>
+                  ))}
                 </div>
               </div>
-
-              <Section title="Strict Auditor Evaluation" fullWidth>
-                <div style={{ display: 'flex', gap: '48px' }}>
-                  <div>
-                    <div className="card-title" style={{ border: 'none' }}>Score</div>
-                    <div className="metric-large">{data.evaluation.score}<span style={{ fontSize: '20px', color: '#999' }}>/10</span></div>
-                    <div className="tag" style={{ background: '#000', marginTop: '8px' }}>{data.evaluation.rating}</div>
+              <div className="card">
+                <SectionHeader title="Risk Diagnostics" icon={ShieldAlert} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="tag" style={{ justifyContent: 'space-between', padding: '10px', background: '#f9f9f9', width: '100%' }}>
+                    <span>Overlap Risk</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis.risk_diagnostics.overlap_risk}</span>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div className="card-title" style={{ border: 'none' }}>Detailed Auditor Critique</div>
-                    <p className="text-sm" style={{ fontStyle: 'italic', fontSize: '14px', color: '#000' }}>"{data.evaluation.feedback}"</p>
-                    <div style={{ marginTop: '16px', display: 'flex', gap: '32px' }}>
-                       <div className="text-sm"><span className="text-bold">4.0</span> News Utility</div>
-                       <div className="text-sm"><span className="text-bold">3.0</span> Sector Logic</div>
-                       <div className="text-sm"><span className="text-bold">3.0</span> Portfolio Link</div>
-                    </div>
+                  <div className="tag" style={{ justifyContent: 'space-between', padding: '10px', background: '#f9f9f9', width: '100%' }}>
+                    <span>Rate Sensitivity</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis.risk_diagnostics.rate_sensitivity}</span>
+                  </div>
+                  <div className="tag" style={{ justifyContent: 'space-between', padding: '10px', background: '#f9f9f9', width: '100%' }}>
+                    <span>Concentration</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis.risk_diagnostics.sector_concentration_risk}</span>
+                  </div>
+                  <div style={{ marginTop: '10px' }}>
+                    <div className="text-bold" style={{ fontSize: '11px', marginBottom: '8px' }}>MATERIAL RISKS</div>
+                    {data.advisor_report.material_risks.map((r, i) => (
+                      <div key={i} style={{ fontSize: '12px', color: '#555', marginBottom: '5px', display: 'flex', gap: '8px' }}>
+                        <AlertOctagon size={12} color="#cf1322" /> {r}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </Section>
+              </div>
             </div>
-          </>
-        ) : null}
 
-        <footer style={{ marginTop: '48px', paddingTop: '24px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }} className="text-sm">
-           <div>Autonomous Financial Advisor Agent</div>
-           <div>System Status: <span className="text-bold">Optimized Reasoning</span></div>
-        </footer>
+            {/* Causal Reasoning Chains */}
+            <div className="card">
+              <SectionHeader title="Causal Driver Chains" icon={BrainCircuit} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {data.advisor_report.causal_driver_chains.map((chain, i) => (
+                  <div key={i} style={{ padding: '20px', background: '#fcfcfc', border: '1px solid #eee', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <div style={{ background: '#000', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>{chain.strength}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600 }}>{chain.event}</div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', textAlign: 'center', fontSize: '11px' }}>
+                      <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
+                        <div style={{ color: '#888', marginBottom: '4px' }}>MACO VAR</div>
+                        <div className="text-bold">{chain.macro_variable}</div>
+                      </div>
+                      <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
+                        <div style={{ color: '#888', marginBottom: '4px' }}>SECTOR</div>
+                        <div className="text-bold">{chain.sector_impact}</div>
+                      </div>
+                      <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
+                        <div style={{ color: '#888', marginBottom: '4px' }}>HOLDINGS</div>
+                        <div className="text-bold">{chain.affected_holdings}</div>
+                      </div>
+                      <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
+                        <div style={{ color: '#888', marginBottom: '4px' }}>IMPACT</div>
+                        <div className="text-bold" style={{ color: chain.estimated_portfolio_impact < 0 ? '#cf1322' : '#27ae60' }}>{chain.estimated_portfolio_impact}%</div>
+                      </div>
+                      <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
+                        <div style={{ color: '#888', marginBottom: '4px' }}>CONFIDENCE</div>
+                        <div className="text-bold">{(chain.confidence * 100).toFixed(0)}%</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Stress Tests & Rebalancing */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="card">
+                <SectionHeader title="Scenario Stress Tests" icon={Zap} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {data.portfolio_analysis.stress_tests.map((test, i) => (
+                    <div key={i} style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '14px' }}>{test.scenario}</span>
+                        <span style={{ color: '#cf1322', fontWeight: 700 }}>{test.impact_percent}%</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>{test.drawdown_estimate}</div>
+                      <div style={{ marginTop: '8px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                        {test.vulnerable_holdings.map(h => <span key={h} className="tag" style={{ fontSize: '9px' }}>{h}</span>)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="card">
+                <SectionHeader title="Strategic Rebalancing Actions" icon={Target} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {data.advisor_report.strategic_rebalancing_actions.map((action, i) => (
+                    <div key={i} style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span style={{ fontWeight: 700 }}>{action.action}</span>
+                        <span style={{ fontWeight: 700, color: action.shift < 0 ? '#cf1322' : '#27ae60' }}>{action.shift > 0 ? '+' : ''}{action.shift}%</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '15px', fontSize: '11px', color: '#888', marginBottom: '10px' }}>
+                        <span>Current: {action.current_allocation}%</span>
+                        <span>Target: {action.target_allocation}%</span>
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#444', marginBottom: '8px' }}>{action.reasoning}</div>
+                      <div style={{ fontSize: '11px', background: '#f9f9f9', padding: '8px', borderRadius: '4px' }}>
+                        <div style={{ color: '#27ae60' }}>Benefit: {action.expected_benefit}</div>
+                        <div style={{ color: '#faad14' }}>Tradeoff: {action.tradeoff}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Final Diagnosis */}
+            <div className="card" style={{ background: '#000', color: '#fff' }}>
+              <SectionHeader title="Final Tactical Diagnosis" icon={ShieldCheck} />
+              <p style={{ fontSize: '18px', fontWeight: 300, lineHeight: '1.6', color: '#ccc' }}>{data.advisor_report.final_diagnosis}</p>
+              <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #333', display: 'inline-block', fontSize: '12px' }}>
+                CONFIDENCE: <span style={{ fontWeight: 700 }}>{data.advisor_report.confidence_level}</span>
+              </div>
+            </div>
+
+          </div>
+        ) : null}
       </main>
     </div>
   );
