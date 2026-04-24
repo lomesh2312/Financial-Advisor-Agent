@@ -40,6 +40,7 @@ class SectorIntelligence(BaseModel):
 class AdvisorReport(BaseModel):
     portfolio_id: str
     executive_summary: str
+    market_sentiment: str = "NEUTRAL"
     effective_sector_exposure: Dict[str, float]
     risk_diagnostics: Dict[str, Any]
     causal_driver_chains: List[CausalChain]
@@ -107,6 +108,7 @@ def generate_advisor_report(market_context: Dict[str, Any], portfolio_analysis: 
         # Robustness: Sync some fields from analysis if missing/hallucinated
         data["portfolio_id"] = portfolio_analysis.get("portfolio_id")
         data["effective_sector_exposure"] = portfolio_analysis.get("effective_sector_exposure")
+        data["market_sentiment"] = market_context.get("market_sentiment", "NEUTRAL")
         
         safe_flush()
         return AdvisorReport(**data)

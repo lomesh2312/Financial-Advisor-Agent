@@ -19,11 +19,11 @@ data_loader = DataLoader()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Institutional Financial Advisor Agent v0.1.4")
+    logger.info("Starting Institutional Financial Advisor Agent v0.1.5")
     yield
     logger.info("Shutting down Institutional Financial Advisor Agent")
 
-app = FastAPI(title="Financial Advisor Agent API", version="0.1.4", lifespan=lifespan)
+app = FastAPI(title="Financial Advisor Agent API", version="0.1.5", lifespan=lifespan)
 
 # Robust CORS Configuration
 app.add_middleware(
