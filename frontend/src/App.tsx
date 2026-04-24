@@ -53,6 +53,7 @@ interface DashboardData {
     sector_intelligence_view: Array<{ sector: string; trend_signal: string; change_percent: number; macro_rationale: string; impact_on_portfolio: string }>;
     final_diagnosis: string;
     confidence_level: string;
+    material_risks: string[];
   };
   evaluation: {
     score: number;
@@ -125,7 +126,7 @@ function App() {
       <main className="main-content">
         <header className="header-section" style={{ borderBottom: '2px solid #000', marginBottom: '30px' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Institutional Risk Intelligence v0.1.5</h1>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Institutional Risk Intelligence v0.1.6</h1>
             <div style={{ color: '#666', fontSize: '13px' }}>Wealth Management Diagnostic • Real-time</div>
           </div>
           <form className="search-bar" onSubmit={handleSearch} style={{ margin: 0 }}>
@@ -150,16 +151,16 @@ function App() {
             
             {/* Top Metrics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-              <MetricCard title="Net P&L" value={formatCurrency(data.portfolio_analysis.total_pnl)} subtitle={`${data.portfolio_analysis.pnl_percent}% Performance`} color="#000" />
-              <MetricCard title="HHI Index" value={data.portfolio_analysis.risk_diagnostics.hhi} subtitle={data.portfolio_analysis.risk_diagnostics.hhi_status} color={data.portfolio_analysis.risk_diagnostics.hhi > 2500 ? "#cf1322" : "#000"} />
-              <MetricCard title="Beta Sensitivity" value={data.portfolio_analysis.risk_diagnostics.beta_sensitivity} subtitle="Systemic Exposure" color="#000" />
-              <MetricCard title="Risk Tier" value={data.evaluation.rating} subtitle={`Audit Score: ${data.evaluation.score}/10`} color={data.evaluation.rating === 'HIGH' ? '#27ae60' : '#faad14'} />
+              <MetricCard title="Net P&L" value={formatCurrency(data.portfolio_analysis?.total_pnl || 0)} subtitle={`${data.portfolio_analysis?.pnl_percent || 0}% Performance`} color="#000" />
+              <MetricCard title="HHI Index" value={data.portfolio_analysis?.risk_diagnostics?.hhi || 0} subtitle={data.portfolio_analysis?.risk_diagnostics?.hhi_status || "N/A"} color={(data.portfolio_analysis?.risk_diagnostics?.hhi || 0) > 2500 ? "#cf1322" : "#000"} />
+              <MetricCard title="Market Sentiment" value={data.advisor_report?.market_sentiment || "NEUTRAL"} subtitle="Macro Outlook" color="#000" />
+              <MetricCard title="Risk Tier" value={data.evaluation?.rating || "N/A"} subtitle={`Audit Score: ${data.evaluation?.score || 0}/10`} color={data.evaluation?.rating === 'HIGH' ? '#27ae60' : '#faad14'} />
             </div>
 
             {/* Executive Summary */}
             <div className="card" style={{ background: '#fcfcfc', border: '1px solid #ddd' }}>
               <SectionHeader title="Executive CIO Summary" icon={FileText} />
-              <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#222', fontWeight: 400 }}>{data.advisor_report.executive_summary}</p>
+              <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#222', fontWeight: 400 }}>{data.advisor_report?.executive_summary}</p>
             </div>
 
             {/* Effective Exposure & Risk */}
@@ -167,7 +168,7 @@ function App() {
               <div className="card">
                 <SectionHeader title="Effective Sector Exposure (Look-through)" icon={BarChart2} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {Object.entries(data.portfolio_analysis.effective_sector_exposure).map(([s, w]) => (
+                  {Object.entries(data.portfolio_analysis?.effective_sector_exposure || {}).map(([s, w]) => (
                     <div key={s}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px' }}>
                         <span style={{ fontWeight: 600 }}>{s}</span>
@@ -184,17 +185,17 @@ function App() {
                 <SectionHeader title="Risk Diagnostics" icon={ShieldAlert} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div className="tag" style={{ justifyContent: 'space-between', padding: '10px', background: '#f9f9f9', width: '100%' }}>
-                    <span>Overlap Risk</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis.risk_diagnostics.overlap_risk}</span>
+                    <span>Overlap Risk</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis?.risk_diagnostics?.overlap_risk || "N/A"}</span>
                   </div>
                   <div className="tag" style={{ justifyContent: 'space-between', padding: '10px', background: '#f9f9f9', width: '100%' }}>
-                    <span>Rate Sensitivity</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis.risk_diagnostics.rate_sensitivity}</span>
+                    <span>Rate Sensitivity</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis?.risk_diagnostics?.rate_sensitivity || "N/A"}</span>
                   </div>
                   <div className="tag" style={{ justifyContent: 'space-between', padding: '10px', background: '#f9f9f9', width: '100%' }}>
-                    <span>Concentration</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis.risk_diagnostics.sector_concentration_risk}</span>
+                    <span>Concentration</span><span style={{ fontWeight: 700 }}>{data.portfolio_analysis?.risk_diagnostics?.sector_concentration_risk || "N/A"}</span>
                   </div>
                   <div style={{ marginTop: '10px' }}>
                     <div className="text-bold" style={{ fontSize: '11px', marginBottom: '8px' }}>MATERIAL RISKS</div>
-                    {data.advisor_report.material_risks.map((r, i) => (
+                    {(data.advisor_report?.material_risks || []).map((r, i) => (
                       <div key={i} style={{ fontSize: '12px', color: '#555', marginBottom: '5px', display: 'flex', gap: '8px' }}>
                         <AlertOctagon size={12} color="#cf1322" /> {r}
                       </div>
@@ -208,7 +209,7 @@ function App() {
             <div className="card">
               <SectionHeader title="Causal Driver Chains" icon={BrainCircuit} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {data.advisor_report.causal_driver_chains.map((chain, i) => (
+                {(data.advisor_report?.causal_driver_chains || []).map((chain, i) => (
                   <div key={i} style={{ padding: '20px', background: '#fcfcfc', border: '1px solid #eee', borderRadius: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                       <div style={{ background: '#000', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>{chain.strength}</div>
@@ -229,11 +230,11 @@ function App() {
                       </div>
                       <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
                         <div style={{ color: '#888', marginBottom: '4px' }}>IMPACT</div>
-                        <div className="text-bold" style={{ color: chain.estimated_portfolio_impact < 0 ? '#cf1322' : '#27ae60' }}>{chain.estimated_portfolio_impact}%</div>
+                        <div className="text-bold" style={{ color: (chain.estimated_portfolio_impact || 0) < 0 ? '#cf1322' : '#27ae60' }}>{chain.estimated_portfolio_impact}%</div>
                       </div>
                       <div style={{ background: '#fff', padding: '8px', border: '1px solid #eee' }}>
                         <div style={{ color: '#888', marginBottom: '4px' }}>CONFIDENCE</div>
-                        <div className="text-bold">{(chain.confidence * 100).toFixed(0)}%</div>
+                        <div className="text-bold">{((chain.confidence || 0) * 100).toFixed(0)}%</div>
                       </div>
                     </div>
                   </div>
@@ -246,7 +247,7 @@ function App() {
               <div className="card">
                 <SectionHeader title="Scenario Stress Tests" icon={Zap} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {data.portfolio_analysis.stress_tests.map((test, i) => (
+                  {(data.portfolio_analysis?.stress_tests || []).map((test, i) => (
                     <div key={i} style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span style={{ fontWeight: 700, fontSize: '14px' }}>{test.scenario}</span>
@@ -263,11 +264,11 @@ function App() {
               <div className="card">
                 <SectionHeader title="Strategic Rebalancing Actions" icon={Target} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {data.advisor_report.strategic_rebalancing_actions.map((action, i) => (
+                  {(data.advisor_report?.strategic_rebalancing_actions || []).map((action, i) => (
                     <div key={i} style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                         <span style={{ fontWeight: 700 }}>{action.action}</span>
-                        <span style={{ fontWeight: 700, color: action.shift < 0 ? '#cf1322' : '#27ae60' }}>{action.shift > 0 ? '+' : ''}{action.shift}%</span>
+                        <span style={{ fontWeight: 700, color: (action.shift || 0) < 0 ? '#cf1322' : '#27ae60' }}>{action.shift > 0 ? '+' : ''}{action.shift}%</span>
                       </div>
                       <div style={{ display: 'flex', gap: '15px', fontSize: '11px', color: '#888', marginBottom: '10px' }}>
                         <span>Current: {action.current_allocation}%</span>
@@ -287,9 +288,9 @@ function App() {
             {/* Final Diagnosis */}
             <div className="card" style={{ background: '#000', color: '#fff' }}>
               <SectionHeader title="Final Tactical Diagnosis" icon={ShieldCheck} />
-              <p style={{ fontSize: '18px', fontWeight: 300, lineHeight: '1.6', color: '#ccc' }}>{data.advisor_report.final_diagnosis}</p>
+              <p style={{ fontSize: '18px', fontWeight: 300, lineHeight: '1.6', color: '#ccc' }}>{data.advisor_report?.final_diagnosis}</p>
               <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #333', display: 'inline-block', fontSize: '12px' }}>
-                CONFIDENCE: <span style={{ fontWeight: 700 }}>{data.advisor_report.confidence_level}</span>
+                CONFIDENCE: <span style={{ fontWeight: 700 }}>{data.advisor_report?.confidence_level}</span>
               </div>
             </div>
 
