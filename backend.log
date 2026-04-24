@@ -1,0 +1,66 @@
+Langfuse credentials not configured or invalid. Traces will not be sent.
+2026-04-24 18:02:28,083 | INFO     | utils.data_loader | Loading all data files from /Users/luckysonkeshriya/Desktop/stealth/data
+2026-04-24 18:02:28,084 | INFO     | utils.data_loader | market_data.json loaded — 40 stocks
+2026-04-24 18:02:28,084 | INFO     | utils.data_loader | news_data.json loaded — 25 articles
+2026-04-24 18:02:28,085 | INFO     | utils.data_loader | portfolios.json loaded — 3 portfolios
+2026-04-24 18:02:28,085 | INFO     | utils.data_loader | mutual_funds.json loaded — 12 funds
+2026-04-24 18:02:28,085 | INFO     | utils.data_loader | historical_data.json loaded
+2026-04-24 18:02:28,086 | INFO     | utils.data_loader | sector_mapping.json loaded — 11 sectors
+2026-04-24 18:02:28,086 | INFO     | utils.data_loader | All data files loaded successfully
+/Users/luckysonkeshriya/Desktop/stealth/main.py:29: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [10946]
+INFO:     Waiting for application startup.
+2026-04-24 18:02:28,103 | INFO     | main | Starting Institutional Financial Advisor Agent v0.1.2
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2026-04-24 18:02:32,257 | INFO     | main | Processing institutional evaluation for portfolio: PORTFOLIO_001
+/Users/luckysonkeshriya/Desktop/stealth/main.py:63: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  advisor_report = generate_advisor_report(market_context, portfolio_analysis.dict())
+2026-04-24 18:02:32,390 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:02:32,390 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 3.000000 seconds
+2026-04-24 18:02:38,148 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-24 18:02:38,232 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:02:38,232 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 2.000000 seconds
+2026-04-24 18:02:40,261 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:02:40,263 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 11.000000 seconds
+2026-04-24 18:02:51,730 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+/Users/luckysonkeshriya/Desktop/stealth/main.py:70: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  "portfolio_analysis": portfolio_analysis.dict(),
+/Users/luckysonkeshriya/Desktop/stealth/main.py:71: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  "advisor_report": advisor_report.dict(),
+/Users/luckysonkeshriya/Desktop/stealth/main.py:72: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  "evaluation": evaluation.dict()
+INFO:     127.0.0.1:53090 - "GET /api/advisor-evaluation/PORTFOLIO_001 HTTP/1.1" 200 OK
+2026-04-24 18:02:51,775 | INFO     | main | Processing institutional evaluation for portfolio: PORTFOLIO_002
+/Users/luckysonkeshriya/Desktop/stealth/main.py:63: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+  advisor_report = generate_advisor_report(market_context, portfolio_analysis.dict())
+2026-04-24 18:02:51,841 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:02:51,842 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 26.000000 seconds
+2026-04-24 18:03:21,528 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-24 18:03:21,609 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:03:21,609 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 2.000000 seconds
+2026-04-24 18:03:23,636 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:03:23,639 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 9.000000 seconds
+2026-04-24 18:03:34,532 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53100 - "GET /api/advisor-evaluation/PORTFOLIO_002 HTTP/1.1" 200 OK
+2026-04-24 18:03:34,584 | INFO     | main | Processing institutional evaluation for portfolio: PORTFOLIO_003
+2026-04-24 18:03:34,652 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:03:34,652 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 27.000000 seconds
+2026-04-24 18:04:03,627 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-24 18:04:03,716 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:04:03,716 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 3.000000 seconds
+2026-04-24 18:04:06,749 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:04:06,750 | INFO     | groq._base_client | Retrying request to /openai/v1/chat/completions in 8.000000 seconds
+2026-04-24 18:04:14,813 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-04-24 18:04:14,814 | ERROR    | services.evaluation_service | Evaluator Error: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01kpzgggcyfxctp7h5dx4e0rrt` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 4879, Requested 1301. Please try again in 1.799999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+INFO:     127.0.0.1:53110 - "GET /api/advisor-evaluation/PORTFOLIO_003 HTTP/1.1" 200 OK
+2026-04-24 18:08:04,848 | INFO     | main | Processing institutional evaluation for portfolio: PORTFOLIO_001
+2026-04-24 18:08:09,532 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-24 18:08:10,127 | INFO     | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53170 - "GET /api/advisor-evaluation/PORTFOLIO_001 HTTP/1.1" 200 OK

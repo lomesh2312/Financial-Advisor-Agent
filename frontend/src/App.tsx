@@ -124,7 +124,7 @@ function App() {
       <main className="main-content">
         <header className="header-section" style={{ borderBottom: '2px solid #000', marginBottom: '30px' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Institutional Risk Intelligence</h1>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Institutional Risk Intelligence v0.1.3</h1>
             <div style={{ color: '#666', fontSize: '13px' }}>Wealth Management Diagnostic • Real-time</div>
           </div>
           <form className="search-bar" onSubmit={handleSearch} style={{ margin: 0 }}>

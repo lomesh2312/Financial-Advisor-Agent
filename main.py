@@ -13,7 +13,7 @@ from services.evaluation_service import evaluate_advisor_report
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s')
 logger = logging.getLogger("main")
 
-app = FastAPI(title="Financial Advisor Agent API", version="0.1.2")
+app = FastAPI(title="Financial Advisor Agent API", version="0.1.3")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +28,7 @@ data_loader = DataLoader()
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Starting Institutional Financial Advisor Agent v0.1.2")
+    logger.info("Starting Institutional Financial Advisor Agent v0.1.3")
 
 @app.get("/")
 async def root():
