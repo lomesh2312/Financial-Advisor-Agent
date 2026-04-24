@@ -19,11 +19,11 @@ data_loader = DataLoader()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Institutional Financial Advisor Agent v0.1.6")
+    logger.info("Starting Institutional Financial Advisor Agent v0.1.7")
     yield
     logger.info("Shutting down Institutional Financial Advisor Agent")
 
-app = FastAPI(title="Financial Advisor Agent API", version="0.1.6", lifespan=lifespan)
+app = FastAPI(title="Financial Advisor Agent API", version="0.1.7", lifespan=lifespan)
 
 # Robust CORS Configuration
 app.add_middleware(
@@ -43,7 +43,7 @@ async def log_requests(request: Request, call_next):
 
 @app.get("/")
 async def root():
-    return {"app": "Institutional Financial Advisor", "version": "0.1.4", "status": "active"}
+    return {"app": "Institutional Financial Advisor", "version": "0.1.7", "status": "active"}
 
 @app.get("/api/advisor-evaluation/{portfolio_id}")
 async def get_advisor_evaluation(portfolio_id: str):
@@ -63,8 +63,9 @@ async def get_advisor_evaluation(portfolio_id: str):
         
         # 2. Market Context
         market_data = data_loader.get_market_data()
+        market_sentiment_val = market_data.metadata.sentiment if market_data and hasattr(market_data.metadata, 'sentiment') else "NEUTRAL"
         market_context = {
-            "market_sentiment": market_data.metadata.sentiment if market_data and hasattr(market_data.metadata, 'sentiment') else "NEUTRAL",
+            "market_sentiment": market_sentiment_val,
             "sector_trends": {k: v.sentiment for k, v in market_data.sector_performance.items()} if market_data else {},
             "news": data_loader.get_news()[:10]
         }
@@ -75,12 +76,19 @@ async def get_advisor_evaluation(portfolio_id: str):
         # 4. Independent Audit
         evaluation = evaluate_advisor_report(advisor_report)
 
-        return {
+        # Build extremely compatible response
+        response_data = {
             "portfolio_id": portfolio_id,
+            "market_sentiment": market_sentiment_val, # Compatibility at root
             "portfolio_analysis": portfolio_analysis.dict(),
             "advisor_report": advisor_report.dict(),
             "evaluation": evaluation.dict()
         }
+        
+        # Add a "report" key for even older frontend compatibility if needed
+        response_data["report"] = response_data["advisor_report"]
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:
