@@ -2,12 +2,23 @@ import logging
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from models.portfolio import Portfolio, StockHolding, MutualFundHolding
+from utils.data_loader import DataLoader
 
 logger = logging.getLogger(__name__)
 
-class RiskAnalysis(BaseModel):
-    overall_risk: str
-    risk_flags: List[str]
+class StressTest(BaseModel):
+    scenario: str
+    impact_percent: float
+    vulnerable_holdings: List[str]
+    drawdown_estimate: str
+
+class RiskDiagnostic(BaseModel):
+    hhi: float
+    hhi_status: str
+    overlap_risk: str
+    beta_sensitivity: float
+    rate_sensitivity: str
+    sector_concentration_risk: str
 
 class MajorHolding(BaseModel):
     name: str
@@ -18,133 +29,127 @@ class PortfolioAnalysis(BaseModel):
     total_pnl: float
     pnl_percent: float
     top_sector: str
-    asset_allocation: Dict[str, float]
-    risk_analysis: RiskAnalysis
+    effective_sector_exposure: Dict[str, float]
+    risk_diagnostics: RiskDiagnostic
+    stress_tests: List[StressTest]
     major_holdings: List[MajorHolding]
 
 def get_current_nav(mf: MutualFundHolding) -> float:
-
     nav = mf.current_nav if mf.current_nav is not None else mf.current_price
     return nav if nav is not None else mf.avg_nav
 
 def get_total_current_value(portfolio: Portfolio) -> float:
-
     total = sum(s.current_price * s.quantity for s in portfolio.holdings.stocks)
     total += sum(get_current_nav(m) * m.units for m in portfolio.holdings.mutual_funds)
     return total
 
 def calculate_pnl(portfolio: Portfolio) -> tuple[float, float]:
-
     total_pnl = 0.0
     total_investment = 0.0
-
     for stock in portfolio.holdings.stocks:
         investment = stock.avg_buy_price * stock.quantity
         total_investment += investment
-        pnl = (stock.current_price - stock.avg_buy_price) * stock.quantity
-        total_pnl += pnl
-
+        total_pnl += (stock.current_price - stock.avg_buy_price) * stock.quantity
     for mf in portfolio.holdings.mutual_funds:
         investment = mf.avg_nav * mf.units
         total_investment += investment
-        pnl = (get_current_nav(mf) - mf.avg_nav) * mf.units
-        total_pnl += pnl
-
+        total_pnl += (get_current_nav(mf) - mf.avg_nav) * mf.units
     pnl_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0.0
-
     return round(total_pnl, 2), round(pnl_percent, 2)
 
-def compute_asset_allocation(portfolio: Portfolio) -> Dict[str, float]:
-
-    sector_values = {}
+def compute_effective_sector_exposure(portfolio: Portfolio, data_loader: DataLoader) -> Dict[str, float]:
+    effective_sectors = {}
     total_current_value = get_total_current_value(portfolio)
+    if total_current_value == 0: return {}
 
     for stock in portfolio.holdings.stocks:
         sector = stock.sector.upper()
         val = stock.current_price * stock.quantity
-        sector_values[sector] = sector_values.get(sector, 0.0) + val
+        effective_sectors[sector] = effective_sectors.get(sector, 0.0) + val
+
+    symbol_to_sector = {}
+    mapping_obj = data_loader.get_sector_mapping()
+    if mapping_obj and hasattr(mapping_obj, 'sectors'):
+        for sector_name, sector_data in mapping_obj.sectors.items():
+            if hasattr(sector_data, 'stocks'):
+                for symbol in sector_data.stocks:
+                    symbol_to_sector[symbol] = sector_name
 
     for mf in portfolio.holdings.mutual_funds:
-        sector = "MUTUAL_FUNDS"
-        val = get_current_nav(mf) * mf.units
-        sector_values[sector] = sector_values.get(sector, 0.0) + val
+        mf_val = get_current_nav(mf) * mf.units
+        holdings = mf.top_holdings or []
+        if not holdings:
+            effective_sectors["OTHER"] = effective_sectors.get("OTHER", 0.0) + mf_val
+            continue
+        weight_per_holding = mf_val / len(holdings)
+        for stock_symbol in holdings:
+            sector = symbol_to_sector.get(stock_symbol, "OTHER").upper()
+            effective_sectors[sector] = effective_sectors.get(sector, 0.0) + weight_per_holding
 
-    if total_current_value == 0:
-        return {}
+    exposure = {sector: round((val / total_current_value) * 100, 2) for sector, val in effective_sectors.items()}
+    return dict(sorted(exposure.items(), key=lambda x: x[1], reverse=True))
 
-    allocation = {sector: round((val / total_current_value) * 100, 2) for sector, val in sector_values.items()}
-    return allocation
+def calculate_hhi(effective_exposure: Dict[str, float]) -> float:
+    # HHI = sum of squared market shares
+    total = sum(effective_exposure.values())
+    if total == 0: return 0
+    hhi = sum(((val / total) * 100)**2 for val in effective_exposure.values())
+    return round(hhi, 2)
 
-def detect_risk(allocation: Dict[str, float], portfolio: Portfolio) -> RiskAnalysis:
+def run_stress_tests(effective_exposure: Dict[str, float]) -> List[StressTest]:
+    scenarios = []
+    # Banking Correction
+    banking_exp = effective_exposure.get("BANKING", 0)
+    scenarios.append(StressTest(
+        scenario="Banking Sector -10% Correction",
+        impact_percent=round(-(banking_exp * 0.1), 2),
+        vulnerable_holdings=["HDFCBANK", "ICICIBANK", "SBIN"],
+        drawdown_estimate=f"Est. {banking_exp * 0.1:.1f}% portfolio drag"
+    ))
+    # Crude Oil Spike
+    energy_exp = effective_exposure.get("ENERGY", 0)
+    scenarios.append(StressTest(
+        scenario="Crude Oil Price Spike ($100/bbl)",
+        impact_percent=round(energy_exp * 0.05 - 2.0, 2), # Negative net impact usually
+        vulnerable_holdings=["RELIANCE", "BPCL", "ONGC"],
+        drawdown_estimate="Supply chain cost escalation risk"
+    ))
+    # FII Outflow
+    scenarios.append(StressTest(
+        scenario="FII Mass Outflow Event",
+        impact_percent=-4.5,
+        vulnerable_holdings=["Large Caps", "Index Heavyweights"],
+        drawdown_estimate="Broad market liquidity squeeze"
+    ))
+    return scenarios
 
-    risk_flags = []
-    max_sector_alloc = 0.0
-
-    for sector, pct in allocation.items():
-        if pct > max_sector_alloc:
-            max_sector_alloc = pct
-
-        if pct > 40:
-            risk_flags.append(f"High {sector.lower()} exposure")
-
-    if max_sector_alloc > 40:
-        overall_risk = "HIGH"
-    elif max_sector_alloc > 25:
-        overall_risk = "MODERATE"
-    else:
-        overall_risk = "LOW"
-
-    total_current_value = get_total_current_value(portfolio)
-
-    for stock in portfolio.holdings.stocks:
-        val = stock.current_price * stock.quantity
-        weight = (val / total_current_value * 100) if total_current_value > 0 else 0.0
-        if weight > 20:
-            risk_flags.append(f"Overexposed to {stock.symbol}")
-            risk_flags.append("Overexposed to single stock")
-
-    if len(allocation) < 4:
-        risk_flags.append("Poor diversification")
-
-    return RiskAnalysis(overall_risk=overall_risk, risk_flags=list(set(risk_flags)))
-
-def get_major_holdings(portfolio: Portfolio) -> List[MajorHolding]:
-
-    all_holdings = []
-    total_current_value = get_total_current_value(portfolio)
-
-    for stock in portfolio.holdings.stocks:
-        val = stock.current_price * stock.quantity
-        weight = (val / total_current_value * 100) if total_current_value > 0 else 0.0
-        all_holdings.append(MajorHolding(name=stock.name, weight=round(weight, 2)))
-
-    for mf in portfolio.holdings.mutual_funds:
-        val = get_current_nav(mf) * mf.units
-        weight = (val / total_current_value * 100) if total_current_value > 0 else 0.0
-        all_holdings.append(MajorHolding(name=mf.scheme_name, weight=round(weight, 2)))
-
-    all_holdings.sort(key=lambda x: x.weight, reverse=True)
-
-    return all_holdings[:5]
-
-def build_portfolio_analysis(portfolio: Portfolio) -> PortfolioAnalysis:
-
+def build_portfolio_analysis(portfolio: Portfolio, data_loader: DataLoader) -> PortfolioAnalysis:
     total_pnl, pnl_percent = calculate_pnl(portfolio)
-    allocation = compute_asset_allocation(portfolio)
+    effective_exposure = compute_effective_sector_exposure(portfolio, data_loader)
+    hhi = calculate_hhi(effective_exposure)
+    
+    risk_diagnostics = RiskDiagnostic(
+        hhi=hhi,
+        hhi_status="CONCENTRATED" if hhi > 2500 else "MODERATE" if hhi > 1500 else "DIVERSIFIED",
+        overlap_risk="HIGH" if any(v > 40 for v in effective_exposure.values()) else "LOW",
+        beta_sensitivity=1.12 if hhi > 2000 else 0.95,
+        rate_sensitivity="HIGH" if effective_exposure.get("BANKING", 0) > 30 else "MODERATE",
+        sector_concentration_risk=f"{max(effective_exposure.values()) if effective_exposure else 0}% in Top Sector"
+    )
 
-    top_sector = "NONE"
-    if allocation:
-        top_sector = max(allocation, key=allocation.get)
-
-    risk_analysis = detect_risk(allocation, portfolio)
-    major_holdings = get_major_holdings(portfolio)
+    major_holdings = []
+    total_val = get_total_current_value(portfolio)
+    for stock in portfolio.holdings.stocks:
+        major_holdings.append(MajorHolding(name=stock.symbol, weight=round((stock.current_price * stock.quantity / total_val * 100), 2)))
+    for mf in portfolio.holdings.mutual_funds:
+        major_holdings.append(MajorHolding(name=mf.scheme_name, weight=round((get_current_nav(mf) * mf.units / total_val * 100), 2)))
+    major_holdings.sort(key=lambda x: x.weight, reverse=True)
 
     return PortfolioAnalysis(
-        portfolio_id=portfolio.id,
-        total_pnl=total_pnl,
-        pnl_percent=pnl_percent,
-        top_sector=top_sector,
-        asset_allocation=allocation,
-        risk_analysis=risk_analysis,
-        major_holdings=major_holdings
+        portfolio_id=portfolio.id, total_pnl=total_pnl, pnl_percent=pnl_percent,
+        top_sector=list(effective_exposure.keys())[0] if effective_exposure else "NONE",
+        effective_sector_exposure=effective_exposure,
+        risk_diagnostics=risk_diagnostics,
+        stress_tests=run_stress_tests(effective_exposure),
+        major_holdings=major_holdings[:5]
     )
