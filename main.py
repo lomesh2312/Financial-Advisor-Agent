@@ -1,8 +1,9 @@
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any
 import uvicorn
+from contextlib import asynccontextmanager
 
 from utils.data_loader import DataLoader
 from services.portfolio_analytics import build_portfolio_analysis
@@ -13,26 +14,36 @@ from services.evaluation_service import evaluate_advisor_report
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s')
 logger = logging.getLogger("main")
 
-app = FastAPI(title="Financial Advisor Agent API", version="0.1.3")
+# Initialize global data loader
+data_loader = DataLoader()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting Institutional Financial Advisor Agent v0.1.4")
+    yield
+    logger.info("Shutting down Institutional Financial Advisor Agent")
+
+app = FastAPI(title="Financial Advisor Agent API", version="0.1.4", lifespan=lifespan)
+
+# Robust CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Initialize global data loader
-data_loader = DataLoader()
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Starting Institutional Financial Advisor Agent v0.1.3")
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request: {request.method} {request.url}")
+    response = await call_next(request)
+    logger.info(f"Response status: {response.status_code}")
+    return response
 
 @app.get("/")
 async def root():
-    return {"app": "Institutional Financial Advisor", "version": "0.1.2", "status": "active"}
+    return {"app": "Institutional Financial Advisor", "version": "0.1.4", "status": "active"}
 
 @app.get("/api/advisor-evaluation/{portfolio_id}")
 async def get_advisor_evaluation(portfolio_id: str):
@@ -41,12 +52,11 @@ async def get_advisor_evaluation(portfolio_id: str):
     try:
         portfolio = data_loader.get_portfolio_by_id(portfolio_id)
         if not portfolio:
-            # Try searching keys if not direct match
             all_portfolios = data_loader.get_portfolios()
             if portfolio_id in all_portfolios:
                 portfolio = all_portfolios[portfolio_id]
             else:
-                raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found. Available: {list(all_portfolios.keys())}")
+                raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found")
 
         # 1. Quantitative Analysis (Institutional Look-through)
         portfolio_analysis = build_portfolio_analysis(portfolio, data_loader)
@@ -78,4 +88,6 @@ async def get_advisor_evaluation(portfolio_id: str):
         return {"error": "Failed to generate evaluation", "detail": str(e)}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
